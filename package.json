@@ -1,0 +1,52 @@
+{
+    "author": "hexahedria@gmail.com",
+    "dependencies": {
+        "pebble-effect-layer": "^1.1.1",
+        "pebble-fctx": "^1.2.0",
+        "pebble-math-sll": "^1.19.1"
+    },
+    "keywords": [],
+    "name": "spiral-clock",
+    "pebble": {
+        "capabilities": [
+            ""
+        ],
+        "displayName": "Spiral Clock",
+        "enableMultiJS": true,
+        "messageKeys": [],
+        "projectType": "native",
+        "resources": {
+            "media": [
+                {
+                    "file": "images/primary.png",
+                    "name": "BGD_PRIMARY",
+                    "targetPlatforms": [
+                        "basalt",
+                        "chalk"
+                    ],
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/secondary.png",
+                    "name": "BGD_SECONDARY",
+                    "targetPlatforms": [
+                        "basalt",
+                        "chalk"
+                    ],
+                    "type": "bitmap"
+                }
+            ]
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "chalk"
+        ],
+        "uuid": "18d44ef0-1244-44d0-bdb2-ae8ab2175ac7",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "1.0.0"
+}
