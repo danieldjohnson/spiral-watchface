@@ -21,27 +21,24 @@ static void update_time() {
   // Get a tm structure
   time_t temp = time(NULL); 
   struct tm *tick_time = localtime(&temp);
-
   minutes_ct = (tick_time->tm_min + tick_time->tm_hour*60) % (12*60);
-  
-  layer_mark_dirty(s_draw_layer);
-  
   last_time = *tick_time;
 }
 
-static void update_bitmap(){
+static void update_graphics(){
+  layer_mark_dirty(s_draw_layer);
   #if defined(PBL_COLOR)
-  if(last_time.tm_hour < 12){
-    bitmap_layer_set_bitmap(s_bgd_layer, s_bitmap_secondary);
-  }else{
-    bitmap_layer_set_bitmap(s_bgd_layer, s_bitmap_primary);
-  }
+    if(last_time.tm_hour < 12){
+      bitmap_layer_set_bitmap(s_bgd_layer, s_bitmap_secondary);
+    }else{
+      bitmap_layer_set_bitmap(s_bgd_layer, s_bitmap_primary);
+    }
   #endif
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time();
-  update_bitmap();
+  update_graphics();
 }
 
 static FPoint get_angular_point(FPoint center, fixed_t r, int32_t angle) {
@@ -266,18 +263,21 @@ static void main_window_load(Window *window) {
   
   // Create background layer
   #if defined(PBL_COLOR) 
-  s_bgd_layer = bitmap_layer_create(bounds);
-  s_bitmap_primary = gbitmap_create_with_resource(RESOURCE_ID_BGD_PRIMARY);
-  s_bitmap_secondary = gbitmap_create_with_resource(RESOURCE_ID_BGD_SECONDARY);
-  update_bitmap();
-  layer_add_child(window_layer, bitmap_layer_get_layer(s_bgd_layer));
+    s_bgd_layer = bitmap_layer_create(bounds);
+    s_bitmap_primary = gbitmap_create_with_resource(RESOURCE_ID_BGD_PRIMARY);
+    s_bitmap_secondary = gbitmap_create_with_resource(RESOURCE_ID_BGD_SECONDARY);
   #endif
   
   // Create a drawing layer
   s_draw_layer = layer_create(bounds);
   layer_set_update_proc(s_draw_layer, spiral_update_proc);
+  
+  update_graphics();
 
   // Add it as a child layer to the Window's root layer
+  #if defined(PBL_COLOR) 
+    layer_add_child(window_layer, bitmap_layer_get_layer(s_bgd_layer));
+  #endif
   layer_add_child(window_layer, s_draw_layer);
 }
 
@@ -298,12 +298,12 @@ static void init() {
     .load = main_window_load,
     .unload = main_window_unload
   });
+  
+  // Make sure the time is displayed from the start
+  update_time();
 
   // Show the Window on the watch, with animated=true
   window_stack_push(s_main_window, true);
-
-  // Make sure the time is displayed from the start
-  update_time();
 
   // Register with TickTimerService
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
