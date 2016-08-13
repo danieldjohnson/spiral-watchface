@@ -1,5 +1,4 @@
 #include <pebble.h>
-#include <pebble-effect-layer/pebble-effect-layer.h>
 #include <pebble-fctx/fctx.h>
 
 static Window *s_main_window;
@@ -23,9 +22,6 @@ static void update_time() {
   struct tm *tick_time = localtime(&temp);
   minutes_ct = (tick_time->tm_min + tick_time->tm_hour*60) % (12*60);
   last_time = *tick_time;
-  
-//   minutes_ct = 35 + 10*60;
-//   last_time.tm_hour = 10;
 }
 
 static void update_graphics(){
