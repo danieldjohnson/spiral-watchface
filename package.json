@@ -1,5 +1,5 @@
 {
-    "author": "hexahedria@gmail.com",
+    "author": "hexahedria",
     "dependencies": {
         "pebble-effect-layer": "^1.1.1",
         "pebble-fctx": "^1.2.0",
@@ -17,6 +17,13 @@
         "projectType": "native",
         "resources": {
             "media": [
+                {
+                    "file": "images/menu.png",
+                    "menuIcon": true,
+                    "name": "MENU_ICON",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
                 {
                     "file": "images/primary.png",
                     "name": "BGD_PRIMARY",
