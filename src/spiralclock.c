@@ -4,15 +4,15 @@
 
 static Window *s_main_window;
 static Layer *s_draw_layer;
-static BitmapLayer *s_bgd_layer;
 
+#if defined(PBL_COLOR)
+static BitmapLayer *s_bgd_layer;
 static GBitmap *s_bitmap_primary = NULL, *s_bitmap_secondary = NULL;
+#endif
 
 static int32_t minutes_ct = 0;
 struct tm last_time;
 
-#define BACKGROUND_COLOR_NIGHT PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorWhite)
-#define BACKGROUND_COLOR_DAY PBL_IF_COLOR_ELSE(GColorVividCerulean, GColorWhite)
 #define TICK_COLOR PBL_IF_COLOR_ELSE(GColorLightGray , GColorWhite)
 #define MINUTE_COVER_COLOR GColorBlack
 #define HOUR_SPIRAL_COLOR GColorWhite
@@ -67,15 +67,12 @@ static void make_arc(FContext *fctx, FPoint center, fixed_t start_r, fixed_t end
   int32_t CP_ANG = (end_angle-start_angle)/4;
   int32_t CP_BASE_NUM = (4*sin_lookup(CP_ANG));
   int32_t CP_BASE_DENOM = (3*cos_lookup(CP_ANG));
-//   printf("CP_BASE %d / %d", (int)CP_BASE_NUM, (int)CP_BASE_DENOM);
   
-//   printf("(%d * %d * %d) / (%d * %d) = %lld / %lld = %lld", (int)CP_BASE_NUM, (int)start_r, (int)-sin_lookup(start_angle), (int)CP_BASE_DENOM, (int)TRIG_MAX_RATIO, ((long long)CP_BASE_NUM*(long long)start_r* (long long)-sin_lookup(start_angle)), ((long long)CP_BASE_DENOM*(long long)TRIG_MAX_RATIO), (((long long)CP_BASE_NUM*(long long)start_r*(long long) -sin_lookup(start_angle))/((long long)CP_BASE_DENOM*(long long)TRIG_MAX_RATIO)));
   FPoint cp1_vec = FPoint( ((long long)CP_BASE_NUM*(long long)start_r*(long long) -sin_lookup(start_angle))/((long long)CP_BASE_DENOM*(long long)TRIG_MAX_RATIO),
                            ((long long)CP_BASE_NUM*(long long)start_r*(long long)  cos_lookup(start_angle))/((long long)CP_BASE_DENOM*(long long)TRIG_MAX_RATIO));
   FPoint cp2_vec = FPoint( ((long long)CP_BASE_NUM*(long long)end_r*(long long)  sin_lookup(end_angle))/((long long)CP_BASE_DENOM*(long long)TRIG_MAX_RATIO),
                            ((long long)CP_BASE_NUM*(long long)end_r*(long long) -cos_lookup(end_angle))/((long long)CP_BASE_DENOM*(long long)TRIG_MAX_RATIO));
   
-//   printf("cp1_vec %d , %d", (int)cp1_vec.x, (int)cp1_vec.y);
   
   FPoint cp1 = fpoint_add(center, fpoint_add(start_vec, cp1_vec));
   FPoint cp2 = fpoint_add(center, fpoint_add(end_vec, cp2_vec));
@@ -86,36 +83,6 @@ static void make_arc(FContext *fctx, FPoint center, fixed_t start_r, fixed_t end
 //   fctx_line_to(fctx,end);
   fctx_curve_to(fctx, cp1, cp2, end);
 }
-
-static void make_quarter_arc(FContext *fctx, FPoint center, fixed_t start_r, fixed_t end_r, int quadrant, bool positive_radians){
-  fctx_set_rotation(fctx, TRIG_MAX_ANGLE * quadrant / 4);
-  fctx_set_offset(fctx, center);
-  
-  int dir = positive_radians ? 1 : -1;
-  
-  FPoint start_vec = FPoint( start_r, 0 );
-  FPoint end_vec = FPoint( 0, end_r*dir );
-  
-  // CP_BASE should be 4/3 tan((end-start)/4)
-  int32_t CP_BASE_NUM   = 153073;
-  int32_t CP_BASE_DENOM = 277163;
-  
-  FPoint cp1_vec = FPoint( 0, dir*(CP_BASE_NUM*start_r)/CP_BASE_DENOM );
-  FPoint cp2_vec = FPoint( (CP_BASE_NUM*end_r)/CP_BASE_DENOM, 0 );
-             
-  FPoint cp1 = fpoint_add(start_vec, cp1_vec);
-  FPoint cp2 = fpoint_add(end_vec, cp2_vec);
-  FPoint end = end_vec;
-  
-//   fctx_line_to(fctx,cp1);
-//   fctx_line_to(fctx,cp2);
-//   fctx_line_to(fctx,end);
-  fctx_curve_to(fctx, cp1, cp2, end);
-  
-  fctx_set_offset(fctx, FPointZero);
-  fctx_set_rotation(fctx, 0);
-}
-
 
 #define SCALE_RADIUS(start_ang, end_ang, cur_ang, start_r, end_r) (start_r + ((end_r-start_r)*(cur_ang-start_ang))/(end_ang-start_ang))
 static void make_spiral(FContext *fctx, FPoint center, fixed_t halfwidth, fixed_t start_r, fixed_t end_r, int32_t start_angle, int32_t end_angle, int32_t subdivisions){
