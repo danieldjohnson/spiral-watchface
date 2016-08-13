@@ -6,7 +6,7 @@ static Window *s_main_window;
 static Layer *s_draw_layer;
 static BitmapLayer *s_bgd_layer;
 
-static GBitmap *s_bitmap_primary, *s_bitmap_secondary;
+static GBitmap *s_bitmap_primary = NULL, *s_bitmap_secondary = NULL;
 
 static int32_t minutes_ct = 0;
 struct tm last_time;
@@ -29,9 +29,19 @@ static void update_graphics(){
   layer_mark_dirty(s_draw_layer);
   #if defined(PBL_COLOR)
     if(last_time.tm_hour < 12){
-      bitmap_layer_set_bitmap(s_bgd_layer, s_bitmap_secondary);
+      if(s_bitmap_secondary == NULL){
+        gbitmap_destroy(s_bitmap_primary);
+        s_bitmap_primary = NULL;
+        s_bitmap_secondary = gbitmap_create_with_resource(RESOURCE_ID_BGD_SECONDARY);
+        bitmap_layer_set_bitmap(s_bgd_layer, s_bitmap_secondary);
+      }
     }else{
-      bitmap_layer_set_bitmap(s_bgd_layer, s_bitmap_primary);
+      if(s_bitmap_primary == NULL){
+        gbitmap_destroy(s_bitmap_secondary);
+        s_bitmap_secondary = NULL;
+        s_bitmap_primary = gbitmap_create_with_resource(RESOURCE_ID_BGD_PRIMARY);
+        bitmap_layer_set_bitmap(s_bgd_layer, s_bitmap_primary);
+      }
     }
   #endif
 }
@@ -264,8 +274,6 @@ static void main_window_load(Window *window) {
   // Create background layer
   #if defined(PBL_COLOR) 
     s_bgd_layer = bitmap_layer_create(bounds);
-    s_bitmap_primary = gbitmap_create_with_resource(RESOURCE_ID_BGD_PRIMARY);
-    s_bitmap_secondary = gbitmap_create_with_resource(RESOURCE_ID_BGD_SECONDARY);
   #endif
   
   // Create a drawing layer
@@ -284,6 +292,8 @@ static void main_window_load(Window *window) {
 static void main_window_unload(Window *window) {
   layer_destroy(s_draw_layer);
   #if defined(PBL_COLOR) 
+  gbitmap_destroy(s_bitmap_primary);
+  gbitmap_destroy(s_bitmap_secondary);
   bitmap_layer_destroy(s_bgd_layer);
   #endif
 }
