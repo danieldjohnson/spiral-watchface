@@ -4,6 +4,9 @@
 static Window *s_main_window;
 static Layer *s_draw_layer;
 
+static TextLayer *s_date_month_layer;
+static TextLayer *s_date_day_layer;
+
 #if defined(PBL_COLOR)
 static BitmapLayer *s_bgd_layer;
 static GBitmap *s_bitmap_primary = NULL, *s_bitmap_secondary = NULL;
@@ -11,6 +14,9 @@ static GBitmap *s_bitmap_primary = NULL, *s_bitmap_secondary = NULL;
 
 static int32_t minutes_ct = 0;
 struct tm last_time;
+
+char date_month_buf[3] = "??";
+char date_day_buf[3] = "??";
 
 #define TICK_COLOR PBL_IF_COLOR_ELSE(GColorLightGray , GColorWhite)
 #define MINUTE_COVER_COLOR GColorBlack
@@ -22,6 +28,14 @@ static void update_time() {
   struct tm *tick_time = localtime(&temp);
   minutes_ct = (tick_time->tm_min + tick_time->tm_hour*60) % (12*60);
   last_time = *tick_time;
+}
+
+static void update_text(){
+  strftime(date_month_buf, 3, "%m", &last_time);
+  text_layer_set_text(s_date_month_layer, date_month_buf);
+
+  strftime(date_day_buf, 3, "%d", &last_time);
+  text_layer_set_text(s_date_day_layer, date_day_buf);
 }
 
 static void update_graphics(){
@@ -48,6 +62,7 @@ static void update_graphics(){
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time();
   update_graphics();
+  update_text();
 }
 
 static FPoint get_angular_point(FPoint center, fixed_t r, int32_t angle) {
@@ -196,7 +211,7 @@ static void draw_spirals_for_time(struct Layer *layer, FContext *fctx, int32_t t
   
   fixed_t tick_halfwidth = INT_TO_FIXED(3)/2;
   fixed_t tick_length = INT_TO_FIXED(3);
-  fixed_t tick_inner_radius = minute_outer_radius+INT_TO_FIXED(3);
+  fixed_t tick_inner_radius = minute_outer_radius+INT_TO_FIXED(5);
   
   // make inverse minutes spiral
   fctx_set_fill_color(fctx, MINUTE_COVER_COLOR);
@@ -326,8 +341,7 @@ static void spiral_update_proc(struct Layer *layer, GContext *ctx){
   FContext _fctx, *fctx = &_fctx;
   fctx_init_context(fctx, ctx);
   
-  // draw_spirals_for_time(layer, fctx, minutes_ct, 12*60);
-  draw_spirals_for_time(layer, fctx, 1*60 + 37, 12*60);
+  draw_spirals_for_time(layer, fctx, minutes_ct, 12*60);
   
   fctx_deinit_context(fctx);
 }
@@ -353,10 +367,42 @@ static void main_window_load(Window *window) {
     layer_add_child(window_layer, bitmap_layer_get_layer(s_bgd_layer));
   #endif
   layer_add_child(window_layer, s_draw_layer);
+
+  // Create our text layers
+  int32_t fontsize = 18;
+  int32_t buffer = 10;
+  GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_18);
+  
+  s_date_month_layer = text_layer_create(
+      GRect(buffer, bounds.size.h - buffer - fontsize, bounds.size.w - 2 * buffer, fontsize));
+
+  text_layer_set_background_color(s_date_month_layer, GColorClear);
+  text_layer_set_text(s_date_month_layer, "--");
+  text_layer_set_text_color(s_date_month_layer, GColorWhite);
+  text_layer_set_font(s_date_month_layer, font);
+  text_layer_set_text_alignment(s_date_month_layer, GTextAlignmentLeft);
+
+  layer_add_child(window_layer, text_layer_get_layer(s_date_month_layer));
+  
+  s_date_day_layer = text_layer_create(
+      GRect(buffer, bounds.size.h - buffer - fontsize, bounds.size.w - 2 * buffer, fontsize));
+
+  text_layer_set_background_color(s_date_day_layer, GColorClear);
+  text_layer_set_text(s_date_day_layer, "--");
+  text_layer_set_text_color(s_date_day_layer, GColorWhite);
+  text_layer_set_font(s_date_day_layer, font);
+  text_layer_set_text_alignment(s_date_day_layer, GTextAlignmentRight);
+
+  layer_add_child(window_layer, text_layer_get_layer(s_date_day_layer));
+
+  // Set the text values
+  update_text();
 }
 
 static void main_window_unload(Window *window) {
   layer_destroy(s_draw_layer);
+  text_layer_destroy(s_date_month_layer);
+  text_layer_destroy(s_date_day_layer);
   #if defined(PBL_COLOR) 
   gbitmap_destroy(s_bitmap_primary);
   gbitmap_destroy(s_bitmap_secondary);
